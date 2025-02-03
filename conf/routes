@@ -3,8 +3,12 @@
 # https://www.playframework.com/documentation/latest/ScalaRouting
 # ~~~~
 
-# An example controller showing a sample home page
-GET     /                           controllers.HomeController.index()
+# Task routes
+POST    /tasks                controllers.TaskController.createTask()
+GET     /tasks                controllers.TaskController.getAllTasks
+PUT     /tasks/:id            controllers.TaskController.update(id: String)
+DELETE  /tasks/:id            controllers.TaskController.delete(id: String)
+
 
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file               controllers.Assets.versioned(path="/public", file: Asset)
