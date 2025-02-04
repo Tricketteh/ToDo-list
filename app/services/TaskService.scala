@@ -13,9 +13,9 @@ import reactivemongo.api.commands.WriteResult
 @Singleton
 class TaskService @Inject()(taskDAO: TaskDAO)(implicit ec: ExecutionContext) {
 
-  def createTask(dto: NewTaskDTO): Future[WriteResult] = {
-    val task = Task(None, dto.title, isCompleted = false)
-    taskDAO.createTask(task)
+  def createTask(task: Task): Future[WriteResult] = {
+    val taskCreate = Task(None, task.task, task.isCompleted)
+    taskDAO.create(taskCreate)
   }
 
   def getAllTasks: Future[Seq[Task]] = {
@@ -26,7 +26,7 @@ class TaskService @Inject()(taskDAO: TaskDAO)(implicit ec: ExecutionContext) {
     taskDAO.findAll().flatMap { tasks =>
       tasks.find(task => task._id.contains(id)) match {
         case Some(_) =>
-          taskDAO.updateTask(id, dto)
+          taskDAO.update(id, dto)
       }
     }
   }
@@ -34,7 +34,7 @@ class TaskService @Inject()(taskDAO: TaskDAO)(implicit ec: ExecutionContext) {
   def deleteTask(id: BSONObjectID): Future[WriteResult] = {
     taskDAO.findAll().flatMap { tasks =>
       tasks.find(task => task._id.contains(id)) match {
-        case Some(_) => taskDAO.deleteTask(id)
+        case Some(_) => taskDAO.delete(id)
       }
     }
   }

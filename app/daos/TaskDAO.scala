@@ -30,16 +30,16 @@ class TaskDAO @Inject()(
     )
   }
 
-  def createTask(task: Task): Future[WriteResult] = {
+  def create(task: Task): Future[WriteResult] = {
     collection.flatMap(_.insert(ordered = false).one(task))
   }
 
-  def updateTask(taskId: BSONObjectID, task: UpdateTaskDTO): Future[WriteResult] = {
+  def update(taskId: BSONObjectID, task: UpdateTaskDTO): Future[WriteResult] = {
     collection.flatMap(_.update(ordered = false).one(BSONDocument("_id" -> taskId), task))
   }
 
-  def deleteTask(taskId: BSONObjectID): Future[WriteResult] = {
-    collection.flatMap(_.delete.one(BSONDocument("_id" -> taskId)))
+  def delete(taskId: BSONObjectID): Future[WriteResult] = {
+    collection.flatMap(_.delete.one(BSONDocument("_id" -> taskId), Some(1)))
   }
 
 }

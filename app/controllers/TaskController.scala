@@ -6,6 +6,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
 import models.dtos.{NewTaskDTO, UpdateTaskDTO}
+import models.Task
 import play.api.libs.json.Format.GenericFormat
 import play.api.libs.json.OFormat.oFormatFromReadsAndOWrites
 import play.api.libs.json.{JsError, JsSuccess, JsValue, Json}
@@ -29,7 +30,7 @@ class TaskController @Inject()(
   }
 
   def createTask(): Action[JsValue] = Action.async(controllerComponents.parsers.json) { implicit request => {
-    request.body.validate[NewTaskDTO].fold(
+    request.body.validate[Task].fold(
       _ => Future.successful(BadRequest("Cannot parse request body")),
       task => taskService.createTask(task).map {
         _ => Created(Json.toJson(task))
