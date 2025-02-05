@@ -5,8 +5,7 @@ import javax.inject._
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
-import models.dtos.{NewTaskDTO, UpdateTaskDTO}
-import models.Task
+import models._
 import play.api.libs.json.Format.GenericFormat
 import play.api.libs.json.OFormat.oFormatFromReadsAndOWrites
 import play.api.libs.json.{JsError, JsSuccess, JsValue, Json}
@@ -29,39 +28,28 @@ class TaskController @Inject()(
     }
   }
 
-  def createTask(): Action[JsValue] = Action.async(controllerComponents.parsers.json) { implicit request => {
-    request.body.validate[Task].fold(
-      _ => Future.successful(BadRequest("Cannot parse request body")),
-      task => taskService.createTask(task).map {
-        _ => Created(Json.toJson(task))
-      }
+  def createTask(): Action[JsValue] = Action.async(parse.json) { implicit request => {
+    request.body.validate[TaskDTO].fold(
+      errors => Future.successful(BadRequest(Json.obj("error" -> errors.mkString(",")))),
+      dto => taskService.createTask(dto).map(task => Created(Json.toJson(task)))
     )
   }
   }
 
-  def update(id: String): Action[JsValue] = Action.async(parse.json) { request =>
-    request.body.validate[UpdateTaskDTO] match {
-      case JsSuccess(dto, _) =>
-        BSONObjectID.parse(id) match {
-          case Success(objectId) =>
-            taskService.updateTask(objectId, dto).map(_ => Ok("Task updated successfully"))
-          case Failure(_) =>
-            Future.successful(BadRequest("Invalid BSONObjectID format"))
-        }
-      case JsError(_) =>
-        Future.successful(BadRequest("Invalid format"))
-    }
+  def updateTask(id: String): Action[JsValue] = Action.async(parse.json) { implicit request =>
+    request.body.validate[TaskDTO].fold(
+      errors => Future.successful(BadRequest(Json.obj("error" -> errors.mkString(",")))),
+      dto => taskService.updateTask(id, dto).map {
+        case Some(updatedTask) => Ok(Json.toJson(updatedTask))
+        case None => NotFound(Json.obj("error" -> "Task not found"))
+      }
+    )
   }
 
-  def delete(id: String): Action[AnyContent] = Action.async { implicit request =>
-    BSONObjectID.parse(id) match {
-      case Success(objectId) =>
-        taskService.deleteTask(objectId).map { writeResult =>
-          if (writeResult.n > 0) Ok(s"Task with ID $objectId deleted")
-          else NotFound("Task not found")
-        }
-      case Failure(_) =>
-        Future.successful(BadRequest("Invalid BSONObjectID format"))
+  def deleteTask(id: String): Action[AnyContent] = Action.async {
+    taskService.deleteTask(id).map {
+      case true => NoContent
+      case false => NotFound(Json.obj("error" -> "Task not found"))
     }
   }
 

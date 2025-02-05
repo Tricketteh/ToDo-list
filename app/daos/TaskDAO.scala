@@ -5,11 +5,9 @@ import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 
 import models.Task
-import models.dtos.UpdateTaskDTO
 import play.api.libs.json.OFormat.oFormatFromReadsAndOWrites
 import play.modules.reactivemongo.ReactiveMongoApi
 import reactivemongo.api.Cursor
-import reactivemongo.api.ReadPreference.Primary
 import reactivemongo.api.bson.{BSONDocument, BSONObjectID}
 import reactivemongo.api.bson.collection.BSONCollection
 import reactivemongo.api.commands.WriteResult
@@ -22,11 +20,11 @@ class TaskDAO @Inject()(
 ) {
   private val collection: Future[BSONCollection] = reactiveMongoApi.database.map(db => db.collection("tasks"))
 
-  def findAll(): Future[Seq[Task]] = {
+  def findAll(): Future[List[Task]] = {
     collection.flatMap(
-      _.find(BSONDocument(), Option.empty[Task])
-        .cursor[Task](Primary)
-        .collect[Seq](100, Cursor.FailOnError[Seq[Task]]())
+      _.find(BSONDocument())
+        .cursor[Task]()
+        .collect[List](100, Cursor.FailOnError[List[Task]]())
     )
   }
 
@@ -34,12 +32,14 @@ class TaskDAO @Inject()(
     collection.flatMap(_.insert(ordered = false).one(task))
   }
 
-  def update(taskId: BSONObjectID, task: UpdateTaskDTO): Future[WriteResult] = {
-    collection.flatMap(_.update(ordered = false).one(BSONDocument("_id" -> taskId), task))
+  def update(id: BSONObjectID, update: BSONDocument): Future[Boolean] = {
+    val selector = BSONDocument("_id" -> id)
+    collection.flatMap(_.update.one(selector, update).map(_.nModified > 0))
   }
 
-  def delete(taskId: BSONObjectID): Future[WriteResult] = {
-    collection.flatMap(_.delete.one(BSONDocument("_id" -> taskId), Some(1)))
+  def delete(id: BSONObjectID): Future[Boolean] = {
+    val selector = BSONDocument("_id" -> id)
+    collection.flatMap(_.delete.one(selector).map(_.n > 0))
   }
 
 }
