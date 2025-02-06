@@ -1,6 +1,6 @@
 package daos
 
-import javax.inject.Inject
+import javax.inject.{Inject, Singleton}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -14,6 +14,7 @@ import reactivemongo.api.commands.WriteResult
 import reactivemongo.play.json.compat.bson2json._
 import reactivemongo.play.json.compat.json2bson._
 
+@Singleton
 class TaskDAO @Inject()(
   implicit ex: ExecutionContext,
   reactiveMongoApi: ReactiveMongoApi
@@ -28,6 +29,13 @@ class TaskDAO @Inject()(
     )
   }
 
+  def findById(id: BSONObjectID): Future[Option[Task]] = {
+    val selector = BSONDocument("_id" -> id)
+    collection.flatMap(
+      _.find(selector).one[Task]
+    )
+  }
+
   def create(task: Task): Future[WriteResult] = {
     collection.flatMap(_.insert(ordered = false).one(task))
   }
@@ -39,6 +47,11 @@ class TaskDAO @Inject()(
 
   def delete(id: BSONObjectID): Future[Boolean] = {
     val selector = BSONDocument("_id" -> id)
+    collection.flatMap(_.delete.one(selector).map(_.n > 0))
+  }
+
+  def deleteCompleted(): Future[Boolean] = {
+    val selector = BSONDocument("isCompleted" -> true)
     collection.flatMap(_.delete.one(selector).map(_.n > 0))
   }
 

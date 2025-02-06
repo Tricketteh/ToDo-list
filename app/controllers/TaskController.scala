@@ -3,14 +3,12 @@ package controllers
 import javax.inject._
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success}
 
 import models._
 import play.api.libs.json.Format.GenericFormat
 import play.api.libs.json.OFormat.oFormatFromReadsAndOWrites
-import play.api.libs.json.{JsError, JsSuccess, JsValue, Json}
+import play.api.libs.json.{JsValue, Json}
 import play.api.mvc._
-import reactivemongo.api.bson.BSONObjectID
 import services.TaskService
 
 @Singleton

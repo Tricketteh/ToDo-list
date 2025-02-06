@@ -12,16 +12,27 @@ import reactivemongo.api.bson.{BSONDocument, BSONObjectID}
 @Singleton
 class TaskService @Inject()(taskDAO: TaskDAO)(implicit ec: ExecutionContext) {
 
-  def createTask(dto: TaskDTO): Future[Task] = {
+  def createTask(dto: TaskDTO): Future[TaskDTO] = {
     val taskCreate = Task(BSONObjectID.generate(), dto.task, dto.isCompleted)
-    taskDAO.create(taskCreate).map(_ => taskCreate)
+    taskDAO.create(taskCreate).map(_ => TaskDTO(taskCreate.task, taskCreate.isCompleted))
   }
 
-  def getAllTasks: Future[List[Task]] = {
-    taskDAO.findAll()
+  def getAllTasks: Future[List[TaskDTO]] = {
+    taskDAO.findAll().collect(t => t.map(r => TaskDTO(r.task, r.isCompleted)))
   }
 
-  def updateTask(id: String, dto: TaskDTO): Future[Option[Task]] = {
+  def getTaskByID(id: String): Future[Option[TaskDTO]] = {
+    BSONObjectID.parse(id) match {
+      case Success(objectID) =>
+        taskDAO.findById(objectID).map {
+          case Some(task) => Some(TaskDTO(task.task, task.isCompleted))
+          case None =>
+        }
+      case Failure(_) => Future.successful(None)
+    }
+  }
+
+  def updateTask(id: String, dto: TaskDTO): Future[Option[TaskDTO]] = {
     BSONObjectID.parse(id) match {
       case Success(objectId) =>
         val update = BSONDocument(
@@ -31,7 +42,7 @@ class TaskService @Inject()(taskDAO: TaskDAO)(implicit ec: ExecutionContext) {
           )
         )
         taskDAO.update(objectId, update).map {
-          case true => Some(Task(objectId, dto.task, dto.isCompleted))
+          case true => Some(TaskDTO(dto.task, dto.isCompleted))
           case false => None
         }
       case Failure(_) => Future.successful(None)
@@ -43,6 +54,10 @@ class TaskService @Inject()(taskDAO: TaskDAO)(implicit ec: ExecutionContext) {
       case Success(objectId) => taskDAO.delete(objectId)
       case Failure(_) => Future.successful(false)
     }
+  }
+
+  def deleteCompletedTasks(): Future[Boolean] = {
+    taskDAO.deleteCompleted()
   }
 
 }
