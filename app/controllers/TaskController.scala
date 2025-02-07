@@ -13,16 +13,22 @@ import services.TaskService
 
 @Singleton
 class TaskController @Inject()(
-  implicit ec: ExecutionContext,
   val taskService: TaskService,
   val controllerComponents: ControllerComponents
-) extends BaseController {
+)(implicit ec: ExecutionContext) extends BaseController {
 
-  def getAllTasks: Action[AnyContent] = Action.async { implicit request: Request[AnyContent] =>
+  def getAllTasks: Action[AnyContent] = Action.async {
     taskService.getAllTasks.map {
       tasks =>
         Ok(Json.toJson(tasks)
         )
+    }
+  }
+
+  def getTaskById(id: String): Action[AnyContent] = Action.async {
+    taskService.getTaskByID(id).map {
+      case Some(task) => Ok(Json.toJson(task))
+      case None => NotFound(Json.obj("error" -> s"Task not found with id $id"))
     }
   }
 
@@ -48,6 +54,13 @@ class TaskController @Inject()(
     taskService.deleteTask(id).map {
       case true => NoContent
       case false => NotFound(Json.obj("error" -> "Task not found"))
+    }
+  }
+
+  def deleteCompletedTasks(): Action[AnyContent] = Action.async {
+    taskService.deleteCompletedTasks().map {
+      case true => NoContent
+      case false => NotFound(Json.obj("error" -> "No completed tasks found"))
     }
   }
 
