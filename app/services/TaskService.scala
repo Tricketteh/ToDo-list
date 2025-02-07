@@ -18,7 +18,7 @@ class TaskService @Inject()(taskDAO: TaskDAO)(implicit ec: ExecutionContext) {
   }
 
   def getAllTasks: Future[List[TaskDTO]] = {
-    taskDAO.findAll().collect(t => t.map(r => TaskDTO(r.task, r.isCompleted)))
+    taskDAO.findAll().map(tasks => tasks.map(task => TaskDTO(task.task, task.isCompleted)))
   }
 
   def getTaskByID(id: String): Future[Option[TaskDTO]] = {
@@ -26,7 +26,7 @@ class TaskService @Inject()(taskDAO: TaskDAO)(implicit ec: ExecutionContext) {
       case Success(objectID) =>
         taskDAO.findById(objectID).map {
           case Some(task) => Some(TaskDTO(task.task, task.isCompleted))
-          case None =>
+          case None => None
         }
       case Failure(_) => Future.successful(None)
     }

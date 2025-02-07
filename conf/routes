@@ -6,7 +6,9 @@
 # Task routes
 POST          /tasks               controllers.TaskController.createTask()
 GET           /tasks               controllers.TaskController.getAllTasks
+GET           /tasks/:id           controllers.TaskController.getTaskById(id: String)
 PUT           /tasks/:id           controllers.TaskController.updateTask(id: String)
+DELETE        /tasks               controllers.TaskController.deleteCompletedTasks()
 DELETE        /tasks/:id           controllers.TaskController.deleteTask(id: String)
 
 
