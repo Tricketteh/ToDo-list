@@ -17,8 +17,8 @@ class TaskService @Inject()(taskDAO: TaskDAO)(implicit ec: ExecutionContext) {
     taskDAO.create(taskCreate).map(_ => TaskDTO(taskCreate.task, taskCreate.isCompleted))
   }
 
-  def getAllTasks: Future[List[TaskDTO]] = {
-    taskDAO.findAll().map(tasks => tasks.map(task => TaskDTO(task.task, task.isCompleted)))
+  def getAllTasks(completedFilter: Option[Boolean]): Future[List[TaskDTO]] = {
+    taskDAO.findAll(completedFilter).map(tasks => tasks.map(task => TaskDTO(task.task, task.isCompleted)))
   }
 
   def getTaskByID(id: String): Future[Option[TaskDTO]] = {

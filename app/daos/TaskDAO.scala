@@ -21,9 +21,13 @@ class TaskDAO @Inject()(
 ) {
   private val collection: Future[BSONCollection] = reactiveMongoApi.database.map(db => db.collection("tasks"))
 
-  def findAll(): Future[List[Task]] = {
+  def findAll(completedFilter: Option[Boolean]): Future[List[Task]] = {
+    val query = completedFilter match {
+      case Some(isCompleted) => BSONDocument("isCompleted" -> isCompleted)
+      case None => BSONDocument()
+    }
     collection.flatMap(
-      _.find(BSONDocument())
+      _.find(query)
         .cursor[Task]()
         .collect[List](100, Cursor.FailOnError[List[Task]]())
     )

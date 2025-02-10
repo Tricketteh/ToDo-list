@@ -17,8 +17,9 @@ class TaskController @Inject()(
   val controllerComponents: ControllerComponents
 )(implicit ec: ExecutionContext) extends BaseController {
 
-  def getAllTasks: Action[AnyContent] = Action.async {
-    taskService.getAllTasks.map {
+  def getAllTasks: Action[AnyContent] = Action.async { request =>
+    val completedFilter: Option[Boolean] = request.getQueryString("completed").map(_.toBoolean)
+    taskService.getAllTasks(completedFilter).map {
       tasks =>
         Ok(Json.toJson(tasks)
         )
