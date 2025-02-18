@@ -5,16 +5,15 @@ import scala.concurrent.ExecutionContext.Implicits._
 
 import models.TaskDTO
 import org.apache.pekko.stream.Materializer
-import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
-import play.api.http.Status.{BAD_REQUEST, CREATED, NOT_FOUND, NO_CONTENT, OK}
+import play.api.http.Status.{NOT_FOUND, NO_CONTENT, OK}
 import play.api.libs.json.Json
 import play.api.test.FakeRequest
-import play.api.test.Helpers.{DELETE, GET, POST, PUT, contentAsJson, defaultAwaitTimeout, status, stubControllerComponents}
+import play.api.test.Helpers.{DELETE, GET, contentAsJson, defaultAwaitTimeout, status, stubControllerComponents}
 import services.TaskService
 
 class TaskControllerSpec extends PlaySpec with MockitoSugar with GuiceOneAppPerSuite with ScalaFutures {
