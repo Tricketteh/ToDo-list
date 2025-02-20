@@ -1,15 +1,15 @@
 package models
 
-import reactivemongo.api.bson.{BSONDocumentHandler, BSONObjectID, Macros}
+import play.api.libs.json.{Json, OFormat}
 
 case class Task(
-  _id: BSONObjectID,
+  id: Long,
   task: String,
-  isCompleted: Boolean
+  completed: Boolean
 )
 
-trait TaskBson {
-  implicit val taskBson: BSONDocumentHandler[Task] = Macros.handler[Task]
+trait TaskFormat {
+  implicit val taskFormat: OFormat[Task] = Json.format[Task]
 }
 
-object Task extends TaskBson
+object Task extends TaskFormat

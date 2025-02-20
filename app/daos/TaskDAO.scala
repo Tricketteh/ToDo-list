@@ -5,58 +5,46 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 import models.Task
-import play.api.libs.json.OFormat.oFormatFromReadsAndOWrites
-import play.modules.reactivemongo.ReactiveMongoApi
-import reactivemongo.api.Cursor
-import reactivemongo.api.bson.{BSONDocument, BSONObjectID}
-import reactivemongo.api.bson.collection.BSONCollection
-import reactivemongo.api.commands.WriteResult
-import reactivemongo.play.json.compat.bson2json._
-import reactivemongo.play.json.compat.json2bson._
+import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
+import slick.jdbc.JdbcProfile
+import slick.lifted.CanBeQueryCondition._
 
 @Singleton
-class TaskDAO @Inject()(
-  implicit ex: ExecutionContext,
-  reactiveMongoApi: ReactiveMongoApi
-) {
-  private val collection: Future[BSONCollection] = reactiveMongoApi.database.map(db => db.collection("tasks"))
+class TaskDAO @Inject()(protected val dbConfigProvider: DatabaseConfigProvider)(implicit ec: ExecutionContext)
+  extends HasDatabaseConfigProvider[JdbcProfile] {
 
-  def findAll(completedFilter: Option[Boolean]): Future[List[Task]] = {
-    val query = completedFilter match {
-      case Some(isCompleted) => BSONDocument("isCompleted" -> isCompleted)
-      case None => BSONDocument()
-    }
-    collection.flatMap(
-      _.find(query)
-        .cursor[Task]()
-        .collect[List](100, Cursor.FailOnError[List[Task]]())
-    )
+  import profile.api._
+
+  private class TasksTable(tag: Tag) extends Table[Task](tag, "tasks") {
+    def id = column[Long]("id", O.PrimaryKey, O.AutoInc)
+    def title = column[String]("title")
+    def completed = column[Boolean]("completed")
+    def * = (id, title, completed).mapTo[Task]
   }
 
-  def findById(id: BSONObjectID): Future[Option[Task]] = {
-    val selector = BSONDocument("_id" -> id)
-    collection.flatMap(
-      _.find(selector).one[Task]
-    )
+  private val tasks = TableQuery[TasksTable]
+
+  def findAll(completedFilter: Option[Boolean]): Future[Seq[Task]] = {
+    db.run(
+      tasks
+        .filterOpt(completedFilter)((task, completed) => task.completed === completed.bind)
+        .result)
   }
 
-  def create(task: Task): Future[WriteResult] = {
-    collection.flatMap(_.insert(ordered = false).one(task))
+  def findById(id: Long): Future[Option[Task]] = {
+
   }
 
-  def update(id: BSONObjectID, update: BSONDocument): Future[Boolean] = {
-    val selector = BSONDocument("_id" -> id)
-    collection.flatMap(_.update.one(selector, update).map(_.nModified > 0))
+  def create(task: Task): Future[Long] = {
   }
 
-  def delete(id: BSONObjectID): Future[Boolean] = {
-    val selector = BSONDocument("_id" -> id)
-    collection.flatMap(_.delete.one(selector).map(_.n > 0))
+  def update(id: Long, update: taskDTO): Future[Boolean] = {
+  }
+
+  def delete(id: Long): Future[Boolean] = {
   }
 
   def deleteCompleted(): Future[Boolean] = {
-    val selector = BSONDocument("isCompleted" -> true)
-    collection.flatMap(_.delete.one(selector).map(_.n > 0))
   }
 
 }

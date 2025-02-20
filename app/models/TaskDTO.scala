@@ -4,7 +4,7 @@ import play.api.libs.json.{Json, OFormat}
 
 case class TaskDTO(
   task: String,
-  isCompleted: Boolean
+  completed: Boolean
 )
 
 trait TaskJson {
